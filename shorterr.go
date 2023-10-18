@@ -83,25 +83,25 @@ func Try5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) (A, B, C, D, E)
 	return a, b, c, d, e
 }
 
-type result[A any] struct {
+type Result[A any] struct {
 	a   A
 	err error
 }
 
-type result2[A, B any] struct {
+type Result2[A, B any] struct {
 	a   A
 	b   B
 	err error
 }
 
-type result3[A, B, C any] struct {
+type Result3[A, B, C any] struct {
 	a   A
 	b   B
 	c   C
 	err error
 }
 
-type result4[A, B, C, D any] struct {
+type Result4[A, B, C, D any] struct {
 	a   A
 	b   B
 	c   C
@@ -109,7 +109,7 @@ type result4[A, B, C, D any] struct {
 	err error
 }
 
-type result5[A, B, C, D, E any] struct {
+type Result5[A, B, C, D, E any] struct {
 	a   A
 	b   B
 	c   C
@@ -120,59 +120,59 @@ type result5[A, B, C, D, E any] struct {
 
 // Do is an alternative to Try that allows to wrap the short-circuit error with
 // a description by appending the Or() method.
-func Do[A any](a A, err error) *result[A] {
-	return &result[A]{a, err}
+func Do[A any](a A, err error) *Result[A] {
+	return &Result[A]{a, err}
 }
 
 // Do2 is Do for 2-ary results.
-func Do2[A, B any](a A, b B, err error) *result2[A, B] {
-	return &result2[A, B]{a, b, err}
+func Do2[A, B any](a A, b B, err error) *Result2[A, B] {
+	return &Result2[A, B]{a, b, err}
 }
 
 // Do3 is Do for 3-ary results.
-func Do3[A, B, C any](a A, b B, c C, err error) *result3[A, B, C] {
-	return &result3[A, B, C]{a, b, c, err}
+func Do3[A, B, C any](a A, b B, c C, err error) *Result3[A, B, C] {
+	return &Result3[A, B, C]{a, b, c, err}
 }
 
 // Do4 is Do for 4-ary results.
-func Do4[A, B, C, D any](a A, b B, c C, d D, err error) *result4[A, B, C, D] {
-	return &result4[A, B, C, D]{a, b, c, d, err}
+func Do4[A, B, C, D any](a A, b B, c C, d D, err error) *Result4[A, B, C, D] {
+	return &Result4[A, B, C, D]{a, b, c, d, err}
 }
 
 // Do5 is Do for 5-ary results.
-func Do5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) *result5[A, B, C, D, E] {
-	return &result5[A, B, C, D, E]{a, b, c, d, e, err}
+func Do5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) *Result5[A, B, C, D, E] {
+	return &Result5[A, B, C, D, E]{a, b, c, d, e, err}
 }
 
 // Or returns only the result value of the function called by Do if its returned
 // error is nil. Otherwise it wraps the error with msg and short-circuits the
 // execution of the current function. PassTo must be installed with
 // defer before.
-func (r *result[A]) Or(msg string) A {
+func (r *Result[A]) Or(msg string) A {
 	Check(r.err, msg)
 	return r.a
 }
 
 // Or is Or for 2-ary results.
-func (r *result2[A, B]) Or(msg string) (A, B) {
+func (r *Result2[A, B]) Or(msg string) (A, B) {
 	Check(r.err, msg)
 	return r.a, r.b
 }
 
 // Or is Or for 3-ary results.
-func (r *result3[A, B, C]) Or(msg string) (A, B, C) {
+func (r *Result3[A, B, C]) Or(msg string) (A, B, C) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c
 }
 
 // Or is Or for 4-ary results.
-func (r *result4[A, B, C, D]) Or(msg string) (A, B, C, D) {
+func (r *Result4[A, B, C, D]) Or(msg string) (A, B, C, D) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c, r.d
 }
 
 // Or is Or for 5-ary results.
-func (r *result5[A, B, C, D, E]) Or(msg string) (A, B, C, D, E) {
+func (r *Result5[A, B, C, D, E]) Or(msg string) (A, B, C, D, E) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c, r.d, r.e
 }
