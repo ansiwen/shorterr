@@ -7,25 +7,25 @@ import (
 	"os"
 	"testing"
 
-	"github.com/ansiwen/shorterr"
+	se "github.com/ansiwen/shorterr"
 )
 
 func Example() {
 	f1 := func() (string, error) {
 		file, err := os.Open("data.json")
 		if err != nil {
-			return "", fmt.Errorf("open data.json: %w", err)
+			return "", err
 		}
 
 		jsonData, err := io.ReadAll(file)
 		if err != nil {
-			return "", err
+			return "", fmt.Errorf("can't read data.json: %w", err)
 		}
 
 		var myData map[string]any
 		json.Unmarshal(jsonData, &myData)
 		if err != nil {
-			return "", fmt.Errorf("unmarshalling: %w", err)
+			return "", fmt.Errorf("unmarshalling failed: %w", err)
 		}
 
 		val, ok := myData["name"]
@@ -42,127 +42,133 @@ func Example() {
 	}
 
 	f2 := func() (name string, err error) {
-		defer shorterr.PassTo(&err)
+		defer se.PassTo(&err)
 
-		file := shorterr.Do(os.Open("data.json")).Or("open data.json")
+		file := se.Try(os.Open("data.json"))
 
-		jsonData := shorterr.Must(io.ReadAll(file))
+		jsonData := se.Do(io.ReadAll(file)).Or("can't read data.json")
 
 		var myData map[string]any
-		shorterr.Check(json.Unmarshal(jsonData, &myData), "unmarshalling")
+		se.Check(json.Unmarshal(jsonData, &myData), "unmarshalling failed")
 
 		val, ok := myData["name"]
-		shorterr.Assert(ok, "missing name property")
+		se.Assert(ok, "missing name property")
 
 		name, ok = val.(string)
-		shorterr.Assert(ok, "invalid name property")
+		se.Assert(ok, "invalid name property")
 
 		return
 	}
 
-	f1()
-	f2()
+	_, err1 := f1()
+	_, err2 := f2()
+	fmt.Println(err1)
+	fmt.Println(err2)
+
+	// Output:
+	// open data.json: no such file or directory
+	// open data.json: no such file or directory
 }
 
 func TestCheck(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		shorterr.Check(errFunc(x))
+		defer se.PassTo(&err)
+		se.Check(errFunc(x))
 		return
 	})
 }
 
-func TestMust(t *testing.T) {
+func TestTry(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Must(errFunc1(x)))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Try(errFunc1(x)))
 		return
 	})
 }
 
-func TestMust2(t *testing.T) {
+func TestTry2(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Must2(errFunc2(x)))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Try2(errFunc2(x)))
 		return
 	})
 }
 
-func TestMust3(t *testing.T) {
+func TestTry3(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Must3(errFunc3(x)))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Try3(errFunc3(x)))
 		return
 	})
 }
 
-func TestMust4(t *testing.T) {
+func TestTry4(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Must4(errFunc4(x)))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Try4(errFunc4(x)))
 		return
 	})
 }
 
-func TestMust5(t *testing.T) {
+func TestTry5(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Must5(errFunc5(x)))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Try5(errFunc5(x)))
 		return
 	})
 }
 
 func TestDo(t *testing.T) {
 	assert(t, "failed2: failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Do(errFunc1(x)).Or("failed2"))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Do(errFunc1(x)).Or("failed2"))
 		return
 	})
 }
 
 func TestDo2(t *testing.T) {
 	assert(t, "failed2: failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Do2(errFunc2(x)).Or("failed2"))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Do2(errFunc2(x)).Or("failed2"))
 		return
 	})
 }
 
 func TestDo3(t *testing.T) {
 	assert(t, "failed2: failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Do3(errFunc3(x)).Or("failed2"))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Do3(errFunc3(x)).Or("failed2"))
 		return
 	})
 }
 
 func TestDo4(t *testing.T) {
 	assert(t, "failed2: failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Do4(errFunc4(x)).Or("failed2"))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Do4(errFunc4(x)).Or("failed2"))
 		return
 	})
 }
 
 func TestDo5(t *testing.T) {
 	assert(t, "failed2: failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		a = argsToSlice(shorterr.Do5(errFunc5(x)).Or("failed2"))
+		defer se.PassTo(&err)
+		a = argsToSlice(se.Do5(errFunc5(x)).Or("failed2"))
 		return
 	})
 }
 
 func TestAssert(t *testing.T) {
 	assert(t, "failed", func(x bool) (a []int, err error) {
-		defer shorterr.PassTo(&err)
-		shorterr.Assert(x, "failed")
+		defer se.PassTo(&err)
+		se.Assert(x, "failed")
 		return
 	})
 }
 
 func TestOtherPanic(t *testing.T) {
 	f := func() (err error) {
-		defer shorterr.PassTo(&err)
+		defer se.PassTo(&err)
 		panic("bla")
 	}
 	panicked := false

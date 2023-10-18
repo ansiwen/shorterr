@@ -1,5 +1,8 @@
 # shorterr
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/ansiwen/shorterr)](https://goreportcard.com/report/github.com/ansiwen/shorterr)
+[![GoDoc](https://pkg.go.dev/badge/github.com/ansiwen/shorterr?status.svg)](https://pkg.go.dev/github.com/ansiwen/shorterr?tab=doc)
+
 ## Introduction
 
 This is a simple library that implements short-circuit style error handling,
@@ -8,29 +11,28 @@ failures, the current function is interrupted and the error is returned.
 
 ## Usage
 
-The function that wants to use `shorterr` must install the `PassTo` function
+A function that wants to use `shorterr` must install the `PassTo` function
 with a `defer`, and then make use of the various check and wrapper functions,
 provided for different function signatures.
 
-
-Code that looks like that:
+Code that originally looks like this
 
 ```go
 func myFunc() (string, error) {
 	file, err := os.Open("data.json")
 	if err != nil {
-		return "", fmt.Errorf("open data.json: %w", err)
+		return "", err
 	}
 
 	jsonData, err := io.ReadAll(file)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("can't read data.json: %w", err)
 	}
 
 	var myData map[string]any
 	json.Unmarshal(jsonData, &myData)
 	if err != nil {
-		return "", fmt.Errorf("unmarshalling: %w", err)
+		return "", fmt.Errorf("unmarshalling failed: %w", err)
 	}
 
 	val, ok := myData["name"]
@@ -47,7 +49,7 @@ func myFunc() (string, error) {
 }
 ```
 
-can be written like that:
+can instead be written like this
 
 ```go
 ...
@@ -59,12 +61,12 @@ import se "github.com/ansiwen/shorterr"
 func myFunc() (name string, err error) {
 	defer se.PassTo(&err)
 
-	file := se.Do(os.Open("data.json")).Or("open data.json")
+	file := se.Try(os.Open("data.json"))
 
-	jsonData := se.Must(io.ReadAll(file))
+	jsonData := se.Do(io.ReadAll(file)).Or("can't read data.json")
 
 	var myData map[string]any
-	se.Check(json.Unmarshal(jsonData, &myData), "unmarshalling")
+	se.Check(json.Unmarshal(jsonData, &myData), "unmarshalling failed")
 
 	val, ok := myData["name"]
 	se.Assert(ok, "missing name property")

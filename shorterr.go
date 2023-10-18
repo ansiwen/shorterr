@@ -8,7 +8,7 @@ import (
 	"strings"
 )
 
-type panicError error
+type shortCircuitError error
 
 // PassTo stores the intercepted error in the variable err is pointing to. It
 // must be installed with defer in the current function before the other
@@ -17,11 +17,11 @@ type panicError error
 //	import se "github.com/ansiwen/shorterr"
 //
 //	func Foo() (err error) {
-//		defer shorterr.PassTo(&err)
+//		defer se.PassTo(&err)
 //	...
 func PassTo(err *error) {
 	if v := recover(); v != nil {
-		if e, ok := v.(panicError); ok {
+		if e, ok := v.(shortCircuitError); ok {
 			*err = e
 		} else {
 			panic(v)
@@ -38,107 +38,70 @@ func Check(err error, msg ...string) {
 		if len(msg) > 0 {
 			err = fmt.Errorf("%s: %w", msg, err)
 		}
-		panic(panicError(err))
+		panic(shortCircuitError(err))
 	}
-}
-
-func Must[A any](a A, err error) A {
-	Check(err)
-	return a
-}
-
-func Must2[A, B any](a A, b B, err error) (A, B) {
-	Check(err)
-	return a, b
-}
-
-func Must3[A, B, C any](a A, b B, c C, err error) (A, B, C) {
-	Check(err)
-	return a, b, c
-}
-
-func Must4[A, B, C, D any](a A, b B, c C, d D, err error) (A, B, C, D) {
-	Check(err)
-	return a, b, c, d
-}
-
-func Must5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) (A, B, C, D, E) {
-	Check(err)
-	return a, b, c, d, e
-}
-
-func Do[A any](a A, err error) *Result[A] {
-	return &Result[A]{a, err}
-}
-
-func Do2[A, B any](a A, b B, err error) *Result2[A, B] {
-	return &Result2[A, B]{a, b, err}
-}
-
-func Do3[A, B, C any](a A, b B, c C, err error) *Result3[A, B, C] {
-	return &Result3[A, B, C]{a, b, c, err}
-}
-
-func Do4[A, B, C, D any](a A, b B, c C, d D, err error) *Result4[A, B, C, D] {
-	return &Result4[A, B, C, D]{a, b, c, d, err}
-}
-
-func Do5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) *Result5[A, B, C, D, E] {
-	return &Result5[A, B, C, D, E]{a, b, c, d, e, err}
-}
-
-func (r *Result[A]) Or(msg string) A {
-	Check(r.err, msg)
-	return r.a
-}
-
-func (r *Result2[A, B]) Or(msg string) (A, B) {
-	Check(r.err, msg)
-	return r.a, r.b
-}
-
-func (r *Result3[A, B, C]) Or(msg string) (A, B, C) {
-	Check(r.err, msg)
-	return r.a, r.b, r.c
-}
-
-func (r *Result4[A, B, C, D]) Or(msg string) (A, B, C, D) {
-	Check(r.err, msg)
-	return r.a, r.b, r.c, r.d
-}
-
-func (r *Result5[A, B, C, D, E]) Or(msg string) (A, B, C, D, E) {
-	Check(r.err, msg)
-	return r.a, r.b, r.c, r.d, r.e
 }
 
 // Assert short-circuits the execution of the current function if ok is false
 // and returns msg as an error. PassTo must be installed with defer before.
 func Assert(ok bool, msg string) {
 	if !ok {
-		panic(panicError(errors.New(msg)))
+		panic(shortCircuitError(errors.New(msg)))
 	}
 }
 
-type Result[A any] struct {
+// Try is a wrapper for functions that return a value and an error. It
+// short-circuits the execution of the current function if the error is not nil.
+// Otherwise it only returns the result value. PassTo must be installed with
+// defer before.
+func Try[A any](a A, err error) A {
+	Check(err)
+	return a
+}
+
+// Try2 is Try for functions with 2-ary results.
+func Try2[A, B any](a A, b B, err error) (A, B) {
+	Check(err)
+	return a, b
+}
+
+// Try3 is Try for functions with 3-ary results.
+func Try3[A, B, C any](a A, b B, c C, err error) (A, B, C) {
+	Check(err)
+	return a, b, c
+}
+
+// Try4 is Try for functions with 4-ary results.
+func Try4[A, B, C, D any](a A, b B, c C, d D, err error) (A, B, C, D) {
+	Check(err)
+	return a, b, c, d
+}
+
+// Try5 is Try for functions with 5-ary results.
+func Try5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) (A, B, C, D, E) {
+	Check(err)
+	return a, b, c, d, e
+}
+
+type result[A any] struct {
 	a   A
 	err error
 }
 
-type Result2[A, B any] struct {
+type result2[A, B any] struct {
 	a   A
 	b   B
 	err error
 }
 
-type Result3[A, B, C any] struct {
+type result3[A, B, C any] struct {
 	a   A
 	b   B
 	c   C
 	err error
 }
 
-type Result4[A, B, C, D any] struct {
+type result4[A, B, C, D any] struct {
 	a   A
 	b   B
 	c   C
@@ -146,11 +109,70 @@ type Result4[A, B, C, D any] struct {
 	err error
 }
 
-type Result5[A, B, C, D, E any] struct {
+type result5[A, B, C, D, E any] struct {
 	a   A
 	b   B
 	c   C
 	d   D
 	e   E
 	err error
+}
+
+// Do is an alternative to Try that allows to wrap the short-circuit error with
+// a description by appending the Or() method.
+func Do[A any](a A, err error) *result[A] {
+	return &result[A]{a, err}
+}
+
+// Do2 is Do for 2-ary results.
+func Do2[A, B any](a A, b B, err error) *result2[A, B] {
+	return &result2[A, B]{a, b, err}
+}
+
+// Do3 is Do for 3-ary results.
+func Do3[A, B, C any](a A, b B, c C, err error) *result3[A, B, C] {
+	return &result3[A, B, C]{a, b, c, err}
+}
+
+// Do4 is Do for 4-ary results.
+func Do4[A, B, C, D any](a A, b B, c C, d D, err error) *result4[A, B, C, D] {
+	return &result4[A, B, C, D]{a, b, c, d, err}
+}
+
+// Do5 is Do for 5-ary results.
+func Do5[A, B, C, D, E any](a A, b B, c C, d D, e E, err error) *result5[A, B, C, D, E] {
+	return &result5[A, B, C, D, E]{a, b, c, d, e, err}
+}
+
+// Or returns only the result value of the function called by Do if its returned
+// error is nil. Otherwise it wraps the error with msg and short-circuits the
+// execution of the current function. PassTo must be installed with
+// defer before.
+func (r *result[A]) Or(msg string) A {
+	Check(r.err, msg)
+	return r.a
+}
+
+// Or is Or for 2-ary results.
+func (r *result2[A, B]) Or(msg string) (A, B) {
+	Check(r.err, msg)
+	return r.a, r.b
+}
+
+// Or is Or for 3-ary results.
+func (r *result3[A, B, C]) Or(msg string) (A, B, C) {
+	Check(r.err, msg)
+	return r.a, r.b, r.c
+}
+
+// Or is Or for 4-ary results.
+func (r *result4[A, B, C, D]) Or(msg string) (A, B, C, D) {
+	Check(r.err, msg)
+	return r.a, r.b, r.c, r.d
+}
+
+// Or is Or for 5-ary results.
+func (r *result5[A, B, C, D, E]) Or(msg string) (A, B, C, D, E) {
+	Check(r.err, msg)
+	return r.a, r.b, r.c, r.d, r.e
 }
