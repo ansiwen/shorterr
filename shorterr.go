@@ -153,25 +153,25 @@ func (r *Result[A]) Or(msg string) A {
 	return r.a
 }
 
-// Or is Or for 2-ary results.
+// Or for 2-ary results.
 func (r *Result2[A, B]) Or(msg string) (A, B) {
 	Check(r.err, msg)
 	return r.a, r.b
 }
 
-// Or is Or for 3-ary results.
+// Or for 3-ary results.
 func (r *Result3[A, B, C]) Or(msg string) (A, B, C) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c
 }
 
-// Or is Or for 4-ary results.
+// Or for 4-ary results.
 func (r *Result4[A, B, C, D]) Or(msg string) (A, B, C, D) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c, r.d
 }
 
-// Or is Or for 5-ary results.
+// Or for 5-ary results.
 func (r *Result5[A, B, C, D, E]) Or(msg string) (A, B, C, D, E) {
 	Check(r.err, msg)
 	return r.a, r.b, r.c, r.d, r.e
